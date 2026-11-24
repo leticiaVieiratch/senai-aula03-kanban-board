@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevPulse Agile Kanban - Gestão de Projetos Front-End | SENAI</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- CABEÇALHO DA PLATAFORMA KANBAN -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand-group">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="3" />
+            <path d="M9 3v18M15 3v18" />
+          </svg>
+        </div>
+        <div>
+          <div class="brand-title-wrap">
+            <h1>DevPulse Agile Kanban</h1>
+            <span class="badge-sprint">Sprint 01: Core UI & API</span>
+          </div>
+          <p class="brand-sub">Projeto Integrador Interdisciplinar • SENAI Frameworks Front-End (Prof. Me. Deivison S. Takatu)</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="btn-new-task" class="btn btn-primary" onclick="openModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          Nova Tarefa
+        </button>
+        <button id="btn-reset-data" class="btn btn-outline" onclick="resetDefaultTasks()" title="Restaurar tarefas padrão da disciplina">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Resetar Dados
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- PAINEL DE MÉTRICAS ÁGEIS (KPIs, Velocity, Progresso) -->
+  <section class="metrics-bar">
+    <div class="metrics-container">
+      
+      <div class="metric-card">
+        <span class="metric-label">Progresso da Sprint</span>
+        <div class="metric-val-wrap">
+          <span id="metric-progress-pct" class="metric-val">0%</span>
+          <span id="metric-points-ratio" class="metric-sub">0 / 0 SP</span>
+        </div>
+        <div class="progress-track">
+          <div id="progress-bar-fill" class="progress-fill" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-label">Total de Tarefas</span>
+        <div class="metric-val" id="metric-total-tasks">0</div>
+        <span class="metric-sub">Itens no quadro</span>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-label">Story Points Concluídos</span>
+        <div class="metric-val text-emerald" id="metric-done-points">0 SP</div>
+        <span class="metric-sub">Definition of Done atingida</span>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-label">Pontos em Andamento</span>
+        <div class="metric-val text-blue" id="metric-active-points">0 SP</div>
+        <span class="metric-sub">In Progress + Code Review</span>
+      </div>
+
+      <!-- BARRA DE BUSCA E FILTROS -->
+      <div class="filter-controls">
+        <div class="search-wrap">
+          <input type="text" id="filter-search" placeholder="Filtrar tarefas..." oninput="filterTasks()">
+        </div>
+        <select id="filter-priority" onchange="filterTasks()">
+          <option value="ALL">Todas Prioridades</option>
+          <option value="Must Have">Must Have</option>
+          <option value="Should Have">Should Have</option>
+          <option value="Could Have">Could Have</option>
+        </select>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ÁREA PRINCIPAL: O QUADRO KANBAN COM DRAG-AND-DROP -->
+  <main class="board-area">
+    <div class="board-columns" id="board-container">
+      
+      <!-- COLUNA 1: PRODUCT BACKLOG -->
+      <div class="kanban-col" data-col="backlog">
+        <div class="col-header">
+          <div class="col-title-group">
+            <span class="col-dot dot-slate"></span>
+            <h2>Product Backlog</h2>
+          </div>
+          <span class="col-counter" id="count-backlog">0</span>
+        </div>
+        <div class="col-cards" id="cards-backlog" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'backlog')">
+          <!-- Cards injetados via JavaScript -->
+        </div>
+      </div>
+
+      <!-- COLUNA 2: SPRINT BACKLOG -->
+      <div class="kanban-col" data-col="sprint-backlog">
+        <div class="col-header">
+          <div class="col-title-group">
+            <span class="col-dot dot-indigo"></span>
+            <h2>Sprint Backlog</h2>
+          </div>
+          <span class="col-counter" id="count-sprint-backlog">0</span>
+        </div>
+        <div class="col-cards" id="cards-sprint-backlog" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'sprint-backlog')">
+          <!-- Cards injetados via JavaScript -->
+        </div>
+      </div>
+
+      <!-- COLUNA 3: EM ANDAMENTO (WIP Limit: 2) -->
+      <div class="kanban-col" data-col="in-progress" data-wip="2">
+        <div class="col-header">
+          <div class="col-title-group">
+            <span class="col-dot dot-blue"></span>
+            <h2>Em Andamento</h2>
+            <span class="wip-tag" title="Work in Progress Limit">WIP: 2</span>
+          </div>
+          <span class="col-counter" id="count-in-progress">0</span>
+        </div>
+        <div class="col-cards" id="cards-in-progress" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'in-progress')">
+          <!-- Cards injetados via JavaScript -->
+        </div>
+      </div>
+
+      <!-- COLUNA 4: CODE REVIEW (WIP Limit: 2) -->
+      <div class="kanban-col" data-col="review" data-wip="2">
+        <div class="col-header">
+          <div class="col-title-group">
+            <span class="col-dot dot-amber"></span>
+            <h2>Code Review</h2>
+            <span class="wip-tag" title="Work in Progress Limit">WIP: 2</span>
+          </div>
+          <span class="col-counter" id="count-review">0</span>
+        </div>
+        <div class="col-cards" id="cards-review" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'review')">
+          <!-- Cards injetados via JavaScript -->
+        </div>
+      </div>
+
+      <!-- COLUNA 5: CONCLUÍDO (DONE) -->
+      <div class="kanban-col" data-col="done">
+        <div class="col-header">
+          <div class="col-title-group">
+            <span class="col-dot dot-emerald"></span>
+            <h2>Concluído (Done)</h2>
+          </div>
+          <span class="col-counter" id="count-done">0</span>
+        </div>
+        <div class="col-cards" id="cards-done" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'done')">
+          <!-- Cards injetados via JavaScript -->
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- MODAL PARA CRIAÇÃO DE NOVA TAREFA -->
+  <div id="modal-new-task" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Adicionar Nova Tarefa Técnica</h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+
+      <form id="form-task" onsubmit="event.preventDefault(); createTask();">
+        <div class="form-group">
+          <label for="task-title">Título da Tarefa *</label>
+          <input type="text" id="task-title" placeholder="Ex: Criar endpoint GET /api/notes" required>
+        </div>
+
+        <div class="form-group">
+          <label for="task-desc">Descrição e Critérios de Aceite</label>
+          <textarea id="task-desc" rows="3" placeholder="Critérios em formato Gherkin (Dado/Quando/Então)..."></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="task-points">Story Points (Fibonacci) *</label>
+            <select id="task-points" required>
+              <option value="1">1 SP (Trivial)</option>
+              <option value="2">2 SP (Simples)</option>
+              <option value="3" selected>3 SP (Médio)</option>
+              <option value="5">5 SP (Substancial)</option>
+              <option value="8">8 SP (Complexo)</option>
+              <option value="13">13 SP (Épico)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="task-priority">Prioridade MoSCoW *</label>
+            <select id="task-priority" required>
+              <option value="Must Have">Must Have (Crítico)</option>
+              <option value="Should Have">Should Have (Importante)</option>
+              <option value="Could Have">Could Have (Desejável)</option>
+              <option value="Won't Have">Won't Have (Futuro)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="task-module">Módulo / Épico *</label>
+            <select id="task-module" required>
+              <option value="Core UI">Core UI & CSS</option>
+              <option value="Tailwind">Tailwind CSS</option>
+              <option value="Express API">Express API REST</option>
+              <option value="React App">React Componentes</option>
+              <option value="DevOps">DevOps & Deploy</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="task-assignee">Responsável</label>
+            <input type="text" id="task-assignee" placeholder="Ex: Devison Takatu" value="Time Front-End">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar no Backlog</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST DE NOTIFICAÇÃO -->
+  <div id="toast" class="toast hidden">
+    <span id="toast-text">Ação executada com sucesso!</span>
+  </div>
+
+  <!-- RODAPÉ ACADÊMICO -->
+  <footer class="app-footer">
+    <p>SENAI • Especialização Técnica em Front-End Frameworks • 2026</p>
+    <p>Atividade 03: Gestão Ágil de Projetos Front-End • <strong>Prof. Me. Deivison S. Takatu</strong></p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
